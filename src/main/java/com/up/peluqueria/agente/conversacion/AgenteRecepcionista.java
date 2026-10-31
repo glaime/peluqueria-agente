@@ -4,6 +4,8 @@ import com.up.peluqueria.agente.dominio.DirectorioPeluqueros;
 import com.up.peluqueria.agente.dominio.ReglaIncumplida;
 import com.up.peluqueria.agente.dominio.ReglasAgenda;
 import com.up.peluqueria.agente.modelo.ModeloNoDisponibleException;
+import com.up.peluqueria.agente.seguridad.GuardiaEntrada;
+import com.up.peluqueria.agente.seguridad.ResultadoGuardia;
 import com.up.peluqueria.agente.skill.RegistroSkills;
 import com.up.peluqueria.agente.skill.SkillNoHabilitadaException;
 import com.up.peluqueria.agente.skill.disponibilidad.ConsultarDisponibilidadSkill;
@@ -68,13 +70,15 @@ public class AgenteRecepcionista {
     private final ReglasAgenda reglas;
     private final CalendarioTurnos calendario;
     private final RedactorRespuestas redactor;
+    private final GuardiaEntrada guardia;
     private final Clock reloj;
 
     public AgenteRecepcionista(RegistroSkills registro, InterpretarPedidoSkill skillInterpretar,
                                ListarPeluquerosSkill skillListar, ConsultarDisponibilidadSkill skillConsultar,
                                ReservarTurnoSkill skillReservar, RepositorioSesiones sesiones,
                                DirectorioPeluqueros directorio, ReglasAgenda reglas, CalendarioTurnos calendario,
-                               RedactorRespuestas redactor, Clock reloj) {
+                               RedactorRespuestas redactor, GuardiaEntrada guardia, Clock reloj) {
+        this.guardia = guardia;
         this.registro = registro;
         this.skillInterpretar = skillInterpretar;
         this.skillListar = skillListar;
@@ -91,14 +95,24 @@ public class AgenteRecepcionista {
     /**
      * Procesa un mensaje del cliente.
      *
-     * @param sesionId identificador de la conversación
-     * @param mensaje  texto del cliente
+     * @param sesionId        identificador de la conversación
+     * @param mensajeOriginal texto del cliente tal como llegó
      * @return la respuesta del agente y el detalle de lo que hizo
      */
-    public RespuestaAgente procesar(String sesionId, String mensaje) {
+    public RespuestaAgente procesar(String sesionId, String mensajeOriginal) {
         SesionConversacion sesion = sesiones.buscar(sesionId)
                 .orElseGet(() -> SesionConversacion.nueva(sesionId, Instant.now(reloj)));
         Interaccion ix = new Interaccion(sesion);
+
+        // Capa 1 de seguridad: el mensaje se sanea y se revisa antes de llegar al modelo.
+        ResultadoGuardia revision = guardia.revisar(mensajeOriginal);
+        if (!revision.permitido()) {
+            ix.intencion = Intencion.FUERA_DE_ALCANCE;
+            ix.correcciones.add("mensaje bloqueado por la guardia de entrada: " + revision.motivo());
+            ix.sugerencias.addAll(EJEMPLOS);
+            return ix.responder(redactor.fueraDeAlcance(), sesion.estado(), sesion.pedido());
+        }
+        String mensaje = revision.mensajeSaneado();
 
         // Atajo determinista: "sí" / "no" a la pregunta de confirmación no pasa por el modelo.
         if (sesion.estado() == EstadoConversacion.ESPERANDO_CONFIRMACION) {

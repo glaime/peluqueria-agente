@@ -4,8 +4,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -82,6 +85,41 @@ public class GlobalExceptionHandler {
                 .build();
 
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Ruta inexistente. Sin este manejador, el genérico de abajo la convertía en un 500.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFound(NoResourceFoundException ex, HttpServletRequest request) {
+        log.warn("NoResourceFoundException - {} {}", request.getMethod(), request.getRequestURI());
+        return respuestaSimple(HttpStatus.NOT_FOUND, "El recurso solicitado no existe", request);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
+        log.warn("HttpRequestMethodNotSupportedException - {} {}", request.getMethod(), request.getRequestURI());
+        return respuestaSimple(HttpStatus.METHOD_NOT_ALLOWED, "Método " + request.getMethod() + " no permitido", request);
+    }
+
+    /**
+     * Body con JSON mal formado. No se devuelve el detalle del parser para no exponer información interna.
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleMessageNotReadable(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        log.warn("HttpMessageNotReadableException - {} - {}", request.getRequestURI(), ex.getMostSpecificCause().getMessage());
+        return respuestaSimple(HttpStatus.BAD_REQUEST, "El cuerpo de la solicitud no es un JSON válido", request);
+    }
+
+    private static ResponseEntity<ErrorResponse> respuestaSimple(HttpStatus estado, String mensaje, HttpServletRequest request) {
+        ErrorResponse error = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(estado.value())
+                .error(estado.getReasonPhrase())
+                .message(mensaje)
+                .path(request.getRequestURI())
+                .build();
+        return new ResponseEntity<>(error, estado);
     }
 
     @ExceptionHandler(Exception.class)
