@@ -4,6 +4,7 @@ import com.up.peluqueria.entity.EstadoTurno;
 import com.up.peluqueria.entity.Turno;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -19,6 +20,14 @@ public interface TurnoRepository extends JpaRepository<Turno, Long> {
      */
     @Query("SELECT t FROM Turno t JOIN FETCH t.peluquero ORDER BY t.fecha ASC, t.hora ASC")
     List<Turno> findAllByOrderByFechaAscHoraAsc();
+
+    /**
+     * Turnos de una fecha en un estado dado, con su peluquero (JOIN FETCH).
+     * Lo usa el agente para calcular los horarios libres de un día.
+     */
+    @Query("SELECT t FROM Turno t JOIN FETCH t.peluquero WHERE t.fecha = :fecha AND t.estadoTurno = :estadoTurno")
+    List<Turno> findByFechaAndEstadoTurnoConPeluquero(@Param("fecha") String fecha,
+                                                      @Param("estadoTurno") EstadoTurno estadoTurno);
 
     Optional<Turno> findByPeluquero_IdAndFechaAndHoraAndEstadoTurno(
             Long peluqueroId, String fecha, String hora, EstadoTurno estadoTurno);

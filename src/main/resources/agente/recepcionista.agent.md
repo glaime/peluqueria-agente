@@ -10,8 +10,11 @@ parameters:
   num_ctx: 4096        # ventana de contexto: instrucciones + calendario + mensaje entran holgados
   num_predict: 200     # tope de tokens de salida: la respuesta es un JSON corto
   keep_alive: 10m      # mantiene el modelo cargado en memoria y evita el cold start
-skills:
-  - interpretar-pedido
+skills:                      # lista blanca: el agente solo puede usar estas skills
+  - interpretar-pedido       # LLM: entiende el mensaje y lo convierte en un pedido estructurado
+  - listar-peluqueros        # solo lectura
+  - consultar-disponibilidad # solo lectura
+  - reservar-turno           # crea turnos, siempre después de la confirmación del cliente
 ---
 
 # Rol y propósito

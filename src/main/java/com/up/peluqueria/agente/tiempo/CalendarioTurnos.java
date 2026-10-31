@@ -80,6 +80,21 @@ public class CalendarioTurnos {
     }
 
     /**
+     * @return descripción para el cliente con referencia relativa cuando aplica:
+     *         {@code "hoy jueves 29/10"}, {@code "mañana viernes 30/10"} o {@code "sábado 31/10"}
+     */
+    public String describirParaCliente(LocalDate fecha) {
+        LocalDate hoy = hoy();
+        if (fecha.equals(hoy)) {
+            return "hoy " + describir(fecha);
+        }
+        if (fecha.equals(hoy.plusDays(1))) {
+            return "mañana " + describir(fecha);
+        }
+        return describir(fecha);
+    }
+
+    /**
      * Tabla de días para el prompt del modelo, una línea por día:
      * <pre>
      * - hoy jueves 29/10 → 2026-10-29

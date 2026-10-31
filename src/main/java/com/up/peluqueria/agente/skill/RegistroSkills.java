@@ -78,14 +78,18 @@ public final class RegistroSkills {
     }
 
     private void validar() {
-        List<String> sinImplementacion = new ArrayList<>();
-        for (String declarada : catalogo.skills().keySet()) {
-            if (!implementaciones.containsKey(declarada)) {
-                sinImplementacion.add("la skill '" + declarada + "' está declarada pero no hay una clase que la implemente");
+        List<String> problemas = new ArrayList<>();
+        catalogo.skills().forEach((nombre, definicion) -> {
+            Skill implementacion = implementaciones.get(nombre);
+            if (implementacion == null) {
+                problemas.add("la skill '" + nombre + "' está declarada pero no hay una clase que la implemente");
+            } else if (implementacion.tipo() != definicion.tipo()) {
+                problemas.add("la skill '" + nombre + "' se declara de tipo '" + definicion.tipo().valorEnArchivo()
+                        + "' en su SKILL.md pero la clase es de tipo '" + implementacion.tipo().valorEnArchivo() + "'");
             }
-        }
-        if (!sinImplementacion.isEmpty()) {
-            throw new DefinicionInvalidaException(catalogo.agente().origen(), sinImplementacion);
+        });
+        if (!problemas.isEmpty()) {
+            throw new DefinicionInvalidaException(catalogo.agente().origen(), problemas);
         }
     }
 

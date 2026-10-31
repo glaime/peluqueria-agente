@@ -45,6 +45,20 @@ public class TurnoService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Turnos RESERVADO de una fecha, de todos los peluqueros.
+     *
+     * @param fecha fecha en formato YYYY-MM-DD
+     * @return los turnos reservados ese día
+     */
+    @Transactional(readOnly = true)
+    public List<TurnoResponseDTO> listarReservadosPorFecha(String fecha) {
+        return turnoRepository.findByFechaAndEstadoTurnoConPeluquero(fecha, EstadoTurno.RESERVADO)
+                .stream()
+                .map(this::convertirEntidadADtoResponse)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public TurnoResponseDTO buscarPorId(Long id) {
         log.info("Buscando turno por ID: {}", id);

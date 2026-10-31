@@ -1,5 +1,6 @@
 package com.up.peluqueria.agente.skill.interpretar;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import org.jspecify.annotations.Nullable;
 
 import java.time.LocalDate;
@@ -25,7 +26,7 @@ public record PedidoInterpretado(
         @Nullable String peluquero,
         @Nullable String peluqueroMencionado,
         @Nullable LocalDate fecha,
-        @Nullable LocalTime hora,
+        @JsonFormat(pattern = "HH:mm") @Nullable LocalTime hora,
         Set<ProblemaDato> problemas,
         List<String> correcciones) {
 

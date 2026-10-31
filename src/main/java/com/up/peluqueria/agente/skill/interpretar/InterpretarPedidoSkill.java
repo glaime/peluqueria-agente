@@ -3,6 +3,7 @@ package com.up.peluqueria.agente.skill.interpretar;
 import com.up.peluqueria.agente.definicion.CatalogoAgente;
 import com.up.peluqueria.agente.definicion.DefinicionInvalidaException;
 import com.up.peluqueria.agente.definicion.DefinicionSkill;
+import com.up.peluqueria.agente.definicion.TipoSkill;
 import com.up.peluqueria.agente.modelo.ClienteModelo;
 import com.up.peluqueria.agente.modelo.RespuestaModelo;
 import com.up.peluqueria.agente.modelo.SolicitudModelo;
@@ -66,6 +67,11 @@ public class InterpretarPedidoSkill implements Skill {
     @Override
     public String nombre() {
         return NOMBRE;
+    }
+
+    @Override
+    public TipoSkill tipo() {
+        return TipoSkill.LLM;
     }
 
     /**
